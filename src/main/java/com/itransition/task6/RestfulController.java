@@ -1,10 +1,9 @@
 package com.itransition.task6;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,8 +16,15 @@ public class RestfulController {
 
     private final AppService appService;
 
-    @PostMapping("/api/v1/generateData")
-    public List<User> generateNext10Data(@RequestBody DataRequest request) {
-        return appService.generateNext10Data(request);
+    @GetMapping("/api/v1/generateData")
+    public List<User> generateNext10Data(
+            @RequestParam(name = "dataLength", defaultValue = "0") int dataLength,
+            @RequestParam(name = "country", defaultValue = "ru") String country,
+            @RequestParam(name = "errorCount", defaultValue = "0") double errorCount,
+            @RequestParam(name = "seed", defaultValue = "0") int seed
+    ) {
+        if (dataLength != 0)
+            return appService.generateNext10Data(dataLength, country, errorCount, seed);
+        return appService.generateUser(country, errorCount, seed);
     }
 }

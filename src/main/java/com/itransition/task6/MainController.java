@@ -15,29 +15,10 @@ import java.util.List;
  */
 
 @Controller
-@RequiredArgsConstructor
 public class MainController {
-
-    private final AppService appService;
 
     @GetMapping("/")
     public String getMainPage() {
         return "index";
     }
-
-    @PostMapping("/")
-    public String generateData(Model model,
-                               @RequestParam(required = false) String country,
-                               @RequestParam(required = false) String error,
-                               @RequestParam(required = false) String seed) {
-
-        List<User> users = appService.generateUser(country, error, seed);
-        model.addAttribute("country", country);
-        model.addAttribute("error", error);
-        model.addAttribute("seed", seed);
-        model.addAttribute("users", users);
-        return "index";
-    }
-
-
 }

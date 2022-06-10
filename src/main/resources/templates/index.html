@@ -22,46 +22,28 @@
         <form th:action="@{/}" method="post">
             <div class="row form-group  align-items-end">
                 <div class="col-md-2">
-                    <select th:switch="${country}" class="custom-select" name="country" id="country">
-                        <div th:case="'ru'">
-                            <option>Select country</option>
-                            <option selected value="ru">Russia</option>
-                            <option value="en">USA</option>
-                            <option value="it">Italy</option>
-                        </div>
-                        <div th:case="'en'">
-                            <option>Select country</option>
-                            <option value="ru">Russia</option>
-                            <option selected value="en">USA</option>
-                            <option value="it">Italy</option>
-                        </div>
-                        <div th:case="'it'">
-                            <option>Select country</option>
-                            <option value="ru">Russia</option>
-                            <option value="en">USA</option>
-                            <option selected value="it">Italy</option>
-                        </div>
-                        <div th:case="null">
-                            <option selected>Select country</option>
-                            <option value="ru">Russia</option>
-                            <option value="en">USA</option>
-                            <option value="it">Italy</option>
-                        </div>
+                    <select onchange="setSelectedCountry(this.value)" class="custom-select" name="country"
+                            id="country">
+                        <option value="">Select country</option>
+                        <option value="en">USA</option>
+                        <option value="ru">Russia</option>
+                        <option value="it">Italy</option>
                     </select>
                 </div>
-                <div th:if="${users}!=null">
-                    <input type="number" th:value="${#lists.size(users)}" hidden id="usersLength">
+                <div class="col-md-2">
+                    <input id="range" type="range" class="custom-range" name="rangeInput" value="0" min="0" max="10"
+                           step="0.5"
+                           onchange="changeErrorVal(this.value);">
                 </div>
                 <div class="col-md-2">
-                    <input type="range" class="custom-range" name="rangeInput" min="1" max="10" step="0.5"
-                           onchange="updateTextInput(this.value);" id="range">
-                </div>
-                <div class="col-md-2">
-                    <input id="errorPerRecord" placeholder="Error per record" type="text" class="form-control"
-                           name="error" onchange="checkErrorValue(this.value)" th:value="${error}">
+                    <input onkeyup="changeInputRange(this.value)" id="inputRange" placeholder="Error per record"
+                           type="text"
+                           class="form-control"
+                           name="error" th:value="${error}">
                 </div>
                 <div class="col-md-1">
-                    <input type="text" class="form-control typeahead" id="seedValue" name="seed" placeholder="Seed"
+                    <input id="seedValue" onkeyup="changeSeedValue(this.value)" type="text"
+                           class="form-control typeahead" name="seed" placeholder="Seed"
                            data-provide="typeahead" th:value="${seed}" style="-webkit-appearance: none; margin: 0">
                 </div>
                 <div class="col-md-2">
@@ -70,20 +52,15 @@
                     </button>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark">
-                        <i class="fa-solid fa-shuffle"></i> Generate Data
-                    </button>
-                </div>
-                <div class="col-md-1">
                     <button type="button" class="btn btn-warning" id="download-button">
-                        <i class="fa fa-download" aria-hidden="true"></i>
+                        <i class="fa fa-download" aria-hidden="true"></i> Download CSV
                     </button>
                 </div>
             </div>
         </form>
     </div>
 
-    <div class="div" style="overflow: auto; height: 350px">
+    <div class="generatedDataTable" style="overflow: auto; height: 350px">
 
         <table class="table" id="dataTable">
             <thead class="thead-light" style="position: sticky; top: 0;">
@@ -111,14 +88,53 @@
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
-    function updateTextInput(val) {
-        document.getElementById('errorPerRecord').value = val;
+
+    function changeSeedValue(val) {
+        console.log(val);
+        getGeneratedData();
+    }
+
+    function changeInputRange(val) {
+        console.log(val);
+        getGeneratedData();
+    }
+
+    function setupErrorSlider() {
+
+        let range = document.getElementById("range");
+        let inputRange = document.getElementById("inputRange");
+        range.addEventListener('input', function () {
+            inputRange.value = this.value;
+        });
+        inputRange.addEventListener('input', function () {
+            range.value = this.value;
+            if (this.value === '') range.value = 0;
+        });
+
+    }
+
+    setupErrorSlider();
+
+    function setSelectedCountry(val) {
+        console.log(val);
+        getGeneratedData();
+    }
+
+    $('seedValue').keyup(function () {
+
+    })
+
+
+    function changeErrorVal(val) {
+        console.log(val);
+        getGeneratedData();
     }
 
     function generateRandom(maxLimit = 1000) {
         let rand = Math.random() * maxLimit;
         rand = Math.floor(rand);
         document.getElementById('seedValue').value = rand;
+        getGeneratedData();
     }
 
     function checkErrorValue(errVal) {
@@ -129,7 +145,7 @@
     }
 
     jQuery(function ($) {
-        $('.div').on('scroll', function () {
+        $('.generatedDataTable').on('scroll', function () {
             if ($(this).scrollTop() +
                 $(this).innerHeight() >=
                 $(this)[0].scrollHeight) {
@@ -138,32 +154,26 @@
         });
     });
 
+
     function load10data() {
         var countryVal = document.getElementById("country").value;
         var seedVal = document.getElementById("seedValue").value;
-        var errorVal = document.getElementById("errorPerRecord").value;
+        var errorVal = document.getElementById("inputRange").value;
         var usersLength = $('#dataTable tr').length;
         console.log(usersLength);
 
         console.log()
 
-        fetch("/api/v1/generateData", {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                'country': countryVal,
-                'error': errorVal,
-                'seed': seedVal,
-                'dataLength': usersLength
-            })
-        }).then(function (response) {
+        fetch('/api/v1/generateData?' + new URLSearchParams({
+            dataLength: usersLength,
+            country: countryVal,
+            errorCount: errorVal,
+            seed: seedVal
+        })).then(function (response) {
             if (response.ok) {
                 response.json().then(res => {
                     res.map(user => {
-                        appendUser(user, usersLength);
+                        appendUser(user);
                     })
                 })
             }
@@ -171,7 +181,7 @@
 
     }
 
-    function appendUser(user, length) {
+    function appendUser(user) {
         $("#tableBody").append(
             "<tr>" +
             "<th scope='row'>" + user.sequenceNumber + "</th>" +
@@ -181,8 +191,7 @@
             "<td>" + user.phoneNumber + "</td>" +
             "</tr>"
         )
-        console.log(length);
-        length = length + 10;
+
     }
 
     function htmlToCSV(html, filename) {
@@ -225,69 +234,61 @@
         htmlToCSV(html, "students.csv");
     });
 
-    // function createExportHeader(dataSource, separator) {
-    //     var headerRow = "",
-    //         columns = dataSource.columns,
-    //         newLine = "\r\n";
-    //
-    //     for (var i=0; i < columns.length; i++) {
-    //         headerRow += (i > 0 ? separator : '') + columns[i].displayName;
-    //     }
-    //     return headerRow + newLine;
-    // }
-    //
-    // function createExportRows(dataSource, separator) {
-    //     var content = "",
-    //         columns = dataSource.columns,
-    //         data = dataSource.data,
-    //         newLine = "\r\n",
-    //         dataField;
-    //
-    //     for(var j=0; j < data.length; j++) {
-    //         for (var i=0; i < columns.length; i++) {
-    //             dataField = columns[i].dataField;
-    //             content += (i > 0 ? separator : '') + data[j][dataField];
-    //         }
-    //         content += newLine;
-    //     }
-    //     return content;
-    // }
-    //
-    // function excelExport() {
-    //     var separator = ',',
-    //         dataSource = {
-    //             data: [
-    //                 {
-    //                     name: "Frank Über",
-    //                     age: 49
-    //                 },
-    //                 {
-    //                     name: "Toni Köhl",
-    //                     age: 56
-    //                 }
-    //             ],
-    //             columns: [
-    //                 {
-    //                     dataField: "name",
-    //                     displayName: "Name"
-    //                 },
-    //                 {
-    //                     dataField: "age",
-    //                     displayName: "Alter"
-    //                 }
-    //             ]
-    //         };
-    //     var content = createExportHeader(dataSource, separator);
-    //     content += createExportRows(dataSource, separator);
-    //
-    //     //an anchor html element on the page (or create dynamically one)
-    //     //to use its download attribute to set filename
-    //     var a = document.getElementById('csv');
-    //     a.textContent='download';
-    //     a.download="MyFile.csv";
-    //     a.href='data:text/csv;charset=utf-8,%EF%BB%BF'+encodeURIComponent(content);
-    //     a.click();
-    // }
+
+    function getGeneratedData() {
+
+        $('.generatedDataTable').animate({scrollTop: 0},0);
+
+
+        // var usersLength = $('#dataTable tr').length;
+        var countryVal = document.getElementById("country").value;
+        var errorVal = document.getElementById("inputRange").value;
+        var seedVal = document.getElementById("seedValue").value;
+        // console.log(usersLength);
+
+        console.log()
+
+        fetch('/api/v1/generateData?' + new URLSearchParams({
+            // dataLength: usersLength == 1 ? '' : usersLength,
+            country: countryVal,
+            errorCount: errorVal,
+            seed: seedVal
+        })).then(function (response) {
+            if (response.ok) {
+                response.json().then(res => {
+                    $("#tableBody").empty();
+                    res.map(user => {
+                        appendUser(user);
+                    })
+                })
+            }
+        });
+
+
+        // fetch("/api/v1/generateData", {
+        //     method: 'GET',
+        //     headers: {
+        //         'Accept': 'application/json',
+        //         'Content-Type': 'application/json'
+        //     },
+        //     // body: JSON.stringify({
+        //     //     'country': countryVal,
+        //     //     'error': errorVal,
+        //     //     'seed': seedVal,
+        //     // })
+        // })
+        //     .then(function (response) {
+        //     if (response.ok) {
+        //         response.json().then(res => {
+        //             $("#tableBody").empty();
+        //             res.map(user => {
+        //                 appendUser(user, usersLength);
+        //             })
+        //         })
+        //     }
+        // });
+
+    }
 
 </script>
 </body>

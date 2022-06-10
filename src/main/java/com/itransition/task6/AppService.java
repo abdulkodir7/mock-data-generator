@@ -15,9 +15,9 @@ import java.util.Random;
 @Service
 public class AppService {
 
-    public List<User> generateUser(String country, String error, String seed) {
+    public List<User> generateUser(String country, double error, int seed) {
 
-        Random random = new Random(Integer.parseInt(seed));
+        Random random = new Random(seed);
 
         List<User> users = new ArrayList<>();
 
@@ -33,6 +33,8 @@ public class AppService {
 
             users.add(user);
         }
+        if (error > 0)
+            generateErrorData(users, error, seed);
 
         return users;
     }
@@ -45,17 +47,12 @@ public class AppService {
         return country.equals("ru") ? faker.phoneNumber().phoneNumber() : faker.phoneNumber().cellPhone();
     }
 
-    public List<User> generateNext10Data(DataRequest request) {
-        int seed = Integer.parseInt(request.getSeed());
-        String locale = request.getCountry();
-        int dataLength = Integer.parseInt(request.getDataLength());
-        double error = Double.parseDouble(request.getError());
+    public List<User> generateNext10Data(int dataLength, String locale, double error, int seed) {
 
         Random random = new Random(seed);
 
         List<User> users = new ArrayList<>();
 
-        System.out.println(dataLength);
         Faker faker = new Faker(new Locale(locale), random);
         for (int i = 1; i < dataLength + 10; i++) {
             if (i >= dataLength) {
@@ -68,10 +65,26 @@ public class AppService {
                 );
                 users.add(user);
             } else
-                faker.name().fullName();
-
+                new User(
+                        faker.number().numberBetween(100000, 999999),
+                        faker.name().fullName(),
+                        generateFullAddress(locale, faker),
+                        generatePhoneNumber(locale, faker),
+                        i
+                );
         }
 
         return users;
     }
+
+    private void generateErrorData(List<User> users, double error, int seed) {
+
+        int errorType = new Faker(new Random(seed)).number().numberBetween(1, 3);
+
+        switch (errorType){
+            case 1:
+        }
+
+    }
+
 }
