@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import static com.itransition.task6.Constants.CYRILLIC;
+import static com.itransition.task6.Constants.LATIN;
+
 /**
  * Abdulqodir Ganiev 6/9/2022 3:15 PM
  */
@@ -34,7 +37,7 @@ public class AppService {
             users.add(user);
         }
         if (error > 0)
-            generateErrorData(users, error, seed);
+            generateErrorData(users, error, seed, country);
 
         return users;
     }
@@ -74,17 +77,91 @@ public class AppService {
                 );
         }
 
+        if (error > 0)
+            generateErrorData(users, error, seed, locale);
+
         return users;
     }
 
-    private void generateErrorData(List<User> users, double error, int seed) {
+    private void generateErrorData(List<User> users, double error, int seed, String country) {
 
-        int errorType = new Faker(new Random(seed)).number().numberBetween(1, 3);
+        Random random = new Random(seed);
 
-        switch (errorType){
-            case 1:
+
+        for (int i = 0; i < error; i++) {
+            for (User fakeUser : users) {
+                int selectField = random.nextInt(3);
+                int method = random.nextInt(3);
+                switch (selectField) {
+                    case 0:
+                        String fullName = fakeUser.getFullName();
+                        fakeUser.setFullName(
+                                method == 0 ?
+                                        addChar(fullName, false, country.equals("ru"), random) : method == 1 ?
+                                        changeChar(fullName, random) : deleteChar(fullName, random)
+                        );
+                        break;
+                    case 1:
+                        String address = fakeUser.getFullAddress();
+                        fakeUser.setFullAddress(
+                                method == 0 ?
+                                        addChar(address, false, country.equals("ru"), random) : method == 1 ?
+                                        changeChar(address, random) : deleteChar(address, random)
+                        );
+                        break;
+                    case 2:
+                        String phoneNumber = fakeUser.getPhoneNumber();
+                        fakeUser.setPhoneNumber(
+                                method == 0 ?
+                                        addChar(phoneNumber, true, country.equals("ru"), random) : method == 1 ?
+                                        changeChar(phoneNumber, random) : deleteChar(phoneNumber, random)
+                        );
+                        break;
+                    default:
+                        break;
+                }
+            }
+
         }
 
+    }
+
+    private String addChar(String data, boolean isNumber, boolean isCyrillic, Random random) {
+        int index = random.nextInt(data.length());
+        if (isCyrillic) {
+            return addCharTo(data, isNumber, index, CYRILLIC, random);
+        } else {
+            return addCharTo(data, isNumber, index, LATIN, random);
+        }
+
+    }
+
+    private String addCharTo(String data, boolean isNumber, int index, String characters, Random random) {
+        if (index == data.length() - 1) return isNumber ? data.concat(String.valueOf(random.nextInt(10))) :
+                data.concat(String.valueOf(characters.charAt(random.nextInt(52))));
+        return isNumber ?
+                data.substring(0, index).concat(String.valueOf(random.nextInt(10)).concat(data.substring(index + 1))) :
+                data.substring(0, index).concat(String.valueOf(characters.charAt(random.nextInt(52)))) +
+                        data.substring(index + 1);
+    }
+
+    private String deleteChar(String data, Random random) {
+        int index = random.nextInt(data.length());
+        return data.replace(data.charAt(index), ' ');
+    }
+
+    private String changeChar(String data, Random random) {
+        int changeFromIndex = random.nextInt(data.length());
+        int changeToIndex = random.nextInt(data.length());
+        char[] chars = data.toCharArray();
+        char changeFrom = chars[changeFromIndex];
+        chars[changeFromIndex] = chars[changeToIndex];
+        chars[changeToIndex] = changeFrom;
+        StringBuilder result = new StringBuilder();
+        for (char aChar : chars) {
+            result.append(aChar);
+        }
+        return result.toString();
     }
 
 }
